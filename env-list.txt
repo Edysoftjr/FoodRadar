@@ -1,0 +1,34 @@
+
+ name                                       value               environments                        created    
+ NEXTAUTH_URL                               Encrypted           Development, Preview, Production    55m ago    
+ NEXTAUTH_SECRET                            Encrypted           Development, Preview, Production    1h ago     
+ GOOGLE_CLIENT_ID                           Encrypted           Development, Preview, Production    20h ago    
+ GOOGLE_CLIENT_SECRET                       Encrypted           Development, Preview, Production    20h ago    
+ foodradar_POSTGRES_PASSWORD                Encrypted           Production, Preview, Development    21h ago    
+ foodradar_POSTGRES_DATABASE                Encrypted           Production, Preview, Development    21h ago    
+ foodradar_SUPABASE_SERVICE_ROLE_KEY        Encrypted           Production, Preview, Development    21h ago    
+ foodradar_POSTGRES_HOST                    Encrypted           Production, Preview, Development    21h ago    
+ foodradar_SUPABASE_ANON_KEY                Encrypted           Production, Preview, Development    21h ago    
+ foodradar_POSTGRES_URL                     Encrypted           Production, Preview, Development    21h ago    
+ foodradar_POSTGRES_PRISMA_URL              Encrypted           Production, Preview, Development    21h ago    
+ foodradar_SUPABASE_URL                     Encrypted           Production, Preview, Development    21h ago    
+ foodradar_NEXT_PUBLIC_SUPABASE_URL         Encrypted           Production, Preview, Development    21h ago    
+ foodradar_POSTGRES_URL_NON_POOLING         Encrypted           Production, Preview, Development    21h ago    
+ foodradar_SUPABASE_JWT_SECRET              Encrypted           Production, Preview, Development    21h ago    
+ foodradar_POSTGRES_USER                    Encrypted           Production, Preview, Development    21h ago    
+ foodradar_NEXT_PUBLIC_SUPABASE_ANON_KEY    Encrypted           Production, Preview, Development    21h ago    
+ HERE_API_KEY                               Encrypted           Development, Preview, Production    2d ago     
+ SUPABASE_JWT_SECRET                        Encrypted           Production                          2d ago     
+ NEXT_PUBLIC_SUPABASE_ANON_KEY              Encrypted           Production                          2d ago     
+ NEXT_PUBLIC_SUPABASE_URL                   Encrypted           Production                          2d ago     
+ POSTGRES_URL                               Encrypted           Production                          2d ago     
+ POSTGRES_PRISMA_URL                        Encrypted           Production                          2d ago     
+ POSTGRES_URL_NON_POOLING                   Encrypted           Production                          2d ago     
+ POSTGRES_USER                              Encrypted           Production                          2d ago     
+ POSTGRES_HOST                              Encrypted           Production                          2d ago     
+ POSTGRES_PASSWORD                          Encrypted           Production                          2d ago     
+ POSTGRES_DATABASE                          Encrypted           Production                          2d ago     
+ SUPABASE_ANON_KEY                          Encrypted           Production                          2d ago     
+ SUPABASE_URL                               Encrypted           Production                          2d ago     
+ SUPABASE_SERVICE_ROLE_KEY                  Encrypted           Production                          2d ago     
+
