@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,17 +13,10 @@ import { GoogleSignInButton } from "@/components/google-signin-button"
 import { useAuth } from "@/components/auth-provider"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
-import { useSession } from "next-auth/react"
 
 export default function LoginPage() {
   const { signIn, loading } = useAuth()
   const { toast } = useToast()
-
-const { data: session } = useSession()
-
-useEffect(() => {
-  console.log("Session from client:", session)
-}, [session])
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

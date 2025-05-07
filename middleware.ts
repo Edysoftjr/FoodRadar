@@ -34,7 +34,6 @@ export default withAuth(
     callbacks: {
       // Return true if the token exists
       authorized: ({ token }) => {
-        console.log(token)
         console.log("Authorization check:", token ? "authorized" : "unauthorized")
         return !!token
       },
@@ -50,4 +49,3 @@ export default withAuth(
 export const config = {
   matcher: ["/profile/:path*", "/admin/:path*", "/vendor/:path*", "/orders/:path*"],
 }
-
