@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { MapPin, Search, User } from "lucide-react"
+import { MapPin } from "lucide-react"
 
 export default function Home() {
   return (
@@ -13,13 +13,13 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-4">
             <Link href="/search">
-              <Button variant="ghost" size="icon">
-                <Search className="h-5 w-5" />
+              <Button variant="ghost" size="sm">
+                Search
               </Button>
             </Link>
             <Link href="/profile">
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
+              <Button variant="ghost" size="sm">
+                Profile
               </Button>
             </Link>
             <Link href="/signup">

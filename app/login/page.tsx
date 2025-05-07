@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MapPin, Loader2 } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { GoogleSignInButton } from "@/components/google-signin-button"
 import { useAuth } from "@/components/auth-provider"
 import { Separator } from "@/components/ui/separator"
@@ -39,10 +39,6 @@ export default function LoginPage() {
 
     try {
       await signIn(email, password)
-      toast({
-        title: "Login successful",
-        description: "Welcome back to FoodRadar!",
-      })
     } catch (error: any) {
       console.error("Login error:", error)
       toast({
@@ -99,14 +95,7 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full rounded-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign In"
-              )}
+              {loading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 

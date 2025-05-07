@@ -1,39 +1,39 @@
 import type React from "react"
-import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
-import { SessionProviderWrapper } from "@/components/session-provider"
 import { AuthProvider } from "@/components/auth-provider"
 import { LocationProvider } from "@/components/location-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "FoodRadar - Find Food Within Your Budget",
-  description: "Discover restaurants and meals that fit your budget and preferences",
+export const metadata = {
+  title: "FoodRadar - Discover Food Near You",
+  description: "Find and explore restaurants and meals within your budget",
     generator: 'v0.dev'
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      </head>
       <body className={inter.className}>
-        <SessionProviderWrapper>
-          <AuthProvider>
-            <LocationProvider>
-              <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-                {children}
-                <Toaster />
-              </ThemeProvider>
-            </LocationProvider>
-          </AuthProvider>
-        </SessionProviderWrapper>
+        <AuthProvider>
+          <LocationProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              {children}
+              <Toaster />
+            </ThemeProvider>
+          </LocationProvider>
+        </AuthProvider>
       </body>
     </html>
   )

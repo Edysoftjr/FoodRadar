@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
-import { MapPin, Loader2 } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { GoogleSignInButton } from "@/components/google-signin-button"
 import { useAuth } from "@/components/auth-provider"
 import { useLocation } from "@/components/location-provider"
@@ -19,11 +19,11 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function SignUpPage() {
-  const { signUp, loading: authLoading } = useAuth()
-  const { location, updateLocation, requestLocationPermission } = useLocation()
+  const { signUp, loading } = useAuth()
+  const { location, requestLocationPermission } = useLocation()
   const { toast } = useToast()
 
-  const [role, setRole] = useState("USER")
+  const [role, setRole] = useState("user")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -32,7 +32,6 @@ export default function SignUpPage() {
   const [description, setDescription] = useState("")
   const [budget, setBudget] = useState(2500)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-  const [detectingLocation, setDetectingLocation] = useState(false)
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
@@ -44,7 +43,7 @@ export default function SignUpPage() {
     if (password.length < 6) errors.password = "Password must be at least 6 characters"
     if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match"
 
-    if (role === "VENDOR") {
+    if (role === "vendor") {
       if (!restaurantName.trim()) errors.restaurantName = "Restaurant name is required"
     }
 
@@ -58,11 +57,7 @@ export default function SignUpPage() {
     if (!validateForm()) return
 
     try {
-      await signUp(email, password, name, role as "USER" | "VENDOR")
-      toast({
-        title: "Account created",
-        description: "Welcome to FoodRadar! You've been automatically signed in.",
-      })
+      await signUp(email, password, name, role as "user" | "vendor")
     } catch (error: any) {
       console.error("Sign up error:", error)
       toast({
@@ -70,31 +65,6 @@ export default function SignUpPage() {
         description: error.message || "Please check your information and try again",
         variant: "destructive",
       })
-    }
-  }
-
-  const handleDetectLocation = async () => {
-    setDetectingLocation(true)
-    try {
-      // First, request location permission explicitly
-      await requestLocationPermission()
-
-      // Then update location
-      await updateLocation()
-
-      toast({
-        title: "Location detected",
-        description: location.address || "Your location has been updated",
-      })
-    } catch (error: any) {
-      console.error("Location detection error:", error)
-      toast({
-        title: "Location detection failed",
-        description: error.message || "Please check your location settings and try again",
-        variant: "destructive",
-      })
-    } finally {
-      setDetectingLocation(false)
     }
   }
 
@@ -111,12 +81,12 @@ export default function SignUpPage() {
           <CardDescription>Join FoodRadar to discover restaurants and meals within your budget.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="USER" className="mb-6" onValueChange={setRole}>
+          <Tabs defaultValue="user" className="mb-6" onValueChange={setRole}>
             <TabsList className="grid w-full grid-cols-2 rounded-full">
-              <TabsTrigger value="USER" className="rounded-full">
+              <TabsTrigger value="user" className="rounded-full">
                 Normal User
               </TabsTrigger>
-              <TabsTrigger value="VENDOR" className="rounded-full">
+              <TabsTrigger value="vendor" className="rounded-full">
                 Restaurant Owner
               </TabsTrigger>
             </TabsList>
@@ -187,26 +157,17 @@ export default function SignUpPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={handleDetectLocation}
-                  disabled={detectingLocation}
+                  onClick={requestLocationPermission}
+                  disabled={location.loading}
                   className="rounded-full"
                 >
-                  {detectingLocation ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Detecting...
-                    </>
-                  ) : location.address ? (
-                    "Update"
-                  ) : (
-                    "Detect"
-                  )}
+                  {location.loading ? "Detecting..." : location.address ? "Update" : "Detect"}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">We need your location to show nearby restaurants</p>
             </div>
 
-            {role === "USER" && (
+            {role === "user" && (
               <div className="space-y-2">
                 <Label>Budget Range (₦)</Label>
                 <div className="pt-4">
@@ -220,7 +181,7 @@ export default function SignUpPage() {
               </div>
             )}
 
-            {role === "VENDOR" && (
+            {role === "vendor" && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="restaurantName">Restaurant Name</Label>
@@ -247,15 +208,8 @@ export default function SignUpPage() {
               </>
             )}
 
-            <Button type="submit" className="w-full rounded-full" disabled={authLoading}>
-              {authLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                "Sign Up"
-              )}
+            <Button type="submit" className="w-full rounded-full" disabled={loading}>
+              {loading ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>
 

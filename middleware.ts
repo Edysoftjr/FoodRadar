@@ -1,51 +1,36 @@
+import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
 import { NextResponse } from "next/server"
-import { withAuth } from "next-auth/middleware"
+import type { NextRequest } from "next/server"
 
-// This function can be marked `async` if using `await` inside
-export default withAuth(
-  // `withAuth` augments your `Request` with the user's token.
-  function middleware(req) {
-    const { pathname } = req.nextUrl
-    const token = req.nextauth?.token
+export async function middleware(req: NextRequest) {
+  const res = NextResponse.next()
+  const supabase = createMiddlewareClient({ req, res })
 
-    console.log("Middleware running for path:", pathname)
-    console.log("Token:", token ? "exists" : "does not exist")
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
-    if (token) {
-      console.log("User role:", token.role)
-    }
+  // Check auth condition
+  const isAuthPage = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/signup")
+  const isProtectedPage =
+    req.nextUrl.pathname.startsWith("/profile") ||
+    req.nextUrl.pathname.startsWith("/admin") ||
+    req.nextUrl.pathname.startsWith("/orders")
 
-    // Admin routes protection
-    if (pathname.startsWith("/admin") && token?.role !== "ADMIN" && token?.role !== "VENDOR") {
-      console.log("Redirecting from admin route - insufficient permissions")
-      return NextResponse.redirect(new URL("/home", req.url))
-    }
+  // If on an auth page and already logged in, redirect to home
+  if (isAuthPage && session) {
+    return NextResponse.redirect(new URL("/home", req.url))
+  }
 
-    // Vendor routes protection
-    if (pathname.startsWith("/vendor") && token?.role !== "VENDOR" && token?.role !== "ADMIN") {
-      console.log("Redirecting from vendor route - insufficient permissions")
-      return NextResponse.redirect(new URL("/home", req.url))
-    }
+  // If on a protected page and not logged in, redirect to login
+  if (isProtectedPage && !session) {
+    return NextResponse.redirect(new URL("/login", req.url))
+  }
 
-    // Allow the request to proceed
-    return NextResponse.next()
-  },
-  {
-    callbacks: {
-      // Return true if the token exists
-      authorized: ({ token }) => {
-        console.log("Authorization check:", token ? "authorized" : "unauthorized")
-        return !!token
-      },
-    },
-    // Pages configuration for redirects
-    pages: {
-      signIn: "/login",
-    },
-  },
-)
+  return res
+}
 
 // Specify which paths this middleware should run on
 export const config = {
-  matcher: ["/profile/:path*", "/admin/:path*", "/vendor/:path*", "/orders/:path*"],
+  matcher: ["/login/:path*", "/signup/:path*", "/profile/:path*", "/admin/:path*", "/orders/:path*"],
 }
