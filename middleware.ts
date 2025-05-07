@@ -1,36 +1,32 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs"
+import { withAuth } from "next-auth/middleware"
 import { NextResponse } from "next/server"
-import type { NextRequest } from "next/server"
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+export default withAuth(
+  function middleware(req) {
+    // Define protected routes based on user role
+    const { pathname } = req.nextUrl
+    const token = req.nextauth.token
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    // Admin routes protection
+    if (pathname.startsWith("/admin") && token?.role !== "ADMIN" && token?.role !== "VENDOR") {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
 
-  // Check auth condition
-  const isAuthPage = req.nextUrl.pathname.startsWith("/login") || req.nextUrl.pathname.startsWith("/signup")
-  const isProtectedPage =
-    req.nextUrl.pathname.startsWith("/profile") ||
-    req.nextUrl.pathname.startsWith("/admin") ||
-    req.nextUrl.pathname.startsWith("/orders")
+    // Vendor routes protection
+    if (pathname.startsWith("/vendor") && token?.role !== "VENDOR" && token?.role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
 
-  // If on an auth page and already logged in, redirect to home
-  if (isAuthPage && session) {
-    return NextResponse.redirect(new URL("/home", req.url))
-  }
-
-  // If on a protected page and not logged in, redirect to login
-  if (isProtectedPage && !session) {
-    return NextResponse.redirect(new URL("/login", req.url))
-  }
-
-  return res
-}
+    return NextResponse.next()
+  },
+  {
+    callbacks: {
+      authorized: ({ token }) => !!token,
+    },
+  },
+)
 
 // Specify which paths this middleware should run on
 export const config = {
-  matcher: ["/login/:path*", "/signup/:path*", "/profile/:path*", "/admin/:path*", "/orders/:path*"],
+  matcher: ["/profile/:path*", "/admin/:path*", "/vendor/:path*", "/orders/:path*"],
 }

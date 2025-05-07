@@ -60,11 +60,16 @@
     "zod": "^3.24.1",
     "@supabase/supabase-js": "latest",
     "prisma": "latest",
-    "@supabase/auth-helpers-nextjs": "latest",
-    "react-icons": "latest",
+    "@auth/core": "latest",
+    "nodemailer": "latest",
     "@prisma/client": "latest",
+    "@supabase/auth-helpers-nextjs": "latest",
     "bcryptjs": "latest",
-    "child_process": "latest"
+    "child_process": "latest",
+    "util": "latest",
+    "next-auth": "latest",
+    "@auth/prisma-adapter": "latest",
+    "react-icons": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

@@ -4,12 +4,13 @@
 
 /* Prevent zooming */
 html {
-  touch-action: manipulation;
+  touch-action: pan-x pan-y;
 }
 
 body {
   font-family: "Inter", sans-serif;
   overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 @layer utilities {
@@ -110,6 +111,15 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Disable pinch zoom */
+  input,
+  textarea,
+  button,
+  select,
+  a {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 

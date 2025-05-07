@@ -20,10 +20,10 @@ import { useToast } from "@/components/ui/use-toast"
 
 export default function SignUpPage() {
   const { signUp, loading: authLoading } = useAuth()
-  const { location, updateLocation } = useLocation()
+  const { location, updateLocation, requestLocationPermission } = useLocation()
   const { toast } = useToast()
 
-  const [role, setRole] = useState("user")
+  const [role, setRole] = useState("USER")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -44,7 +44,7 @@ export default function SignUpPage() {
     if (password.length < 6) errors.password = "Password must be at least 6 characters"
     if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match"
 
-    if (role === "vendor") {
+    if (role === "VENDOR") {
       if (!restaurantName.trim()) errors.restaurantName = "Restaurant name is required"
     }
 
@@ -58,7 +58,7 @@ export default function SignUpPage() {
     if (!validateForm()) return
 
     try {
-      await signUp(email, password, name, role as "user" | "vendor")
+      await signUp(email, password, name, role as "USER" | "VENDOR")
     } catch (error: any) {
       console.error("Sign up error:", error)
       toast({
@@ -72,7 +72,12 @@ export default function SignUpPage() {
   const handleDetectLocation = async () => {
     setDetectingLocation(true)
     try {
+      // First, request location permission explicitly
+      await requestLocationPermission()
+
+      // Then update location
       await updateLocation()
+
       toast({
         title: "Location detected",
         description: location.address || "Your location has been updated",
@@ -102,12 +107,12 @@ export default function SignUpPage() {
           <CardDescription>Join FoodRadar to discover restaurants and meals within your budget.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="user" className="mb-6" onValueChange={setRole}>
+          <Tabs defaultValue="USER" className="mb-6" onValueChange={setRole}>
             <TabsList className="grid w-full grid-cols-2 rounded-full">
-              <TabsTrigger value="user" className="rounded-full">
+              <TabsTrigger value="USER" className="rounded-full">
                 Normal User
               </TabsTrigger>
-              <TabsTrigger value="vendor" className="rounded-full">
+              <TabsTrigger value="VENDOR" className="rounded-full">
                 Restaurant Owner
               </TabsTrigger>
             </TabsList>
@@ -197,7 +202,7 @@ export default function SignUpPage() {
               <p className="text-xs text-muted-foreground">We need your location to show nearby restaurants</p>
             </div>
 
-            {role === "user" && (
+            {role === "USER" && (
               <div className="space-y-2">
                 <Label>Budget Range (₦)</Label>
                 <div className="pt-4">
@@ -211,7 +216,7 @@ export default function SignUpPage() {
               </div>
             )}
 
-            {role === "vendor" && (
+            {role === "VENDOR" && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="restaurantName">Restaurant Name</Label>
