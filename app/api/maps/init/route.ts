@@ -2,20 +2,21 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const { center, zoom } = await request.json()
+    const apiKey = process.env.HERE_API_KEY
 
-    if (!center || !center.lat || !center.lng) {
-      return NextResponse.json({ error: "Invalid center coordinates" }, { status: 400 })
+    if (!apiKey) {
+      return NextResponse.json({ error: "HERE Maps API key not configured" }, { status: 500 })
     }
 
-    // Return map initialization data without exposing API key
+    const body = await request.json()
+    const { center, zoom } = body
+
+    // We're not directly using the API key in the response
+    // Just returning the center and zoom for the static map
     return NextResponse.json({
-      center: {
-        lat: center.lat,
-        lng: center.lng,
-      },
-      zoom: zoom || 14,
-      timestamp: Date.now(),
+      center,
+      zoom,
+      initialized: true,
     })
   } catch (error) {
     console.error("Error initializing map:", error)

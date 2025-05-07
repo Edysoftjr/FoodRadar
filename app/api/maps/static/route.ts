@@ -2,46 +2,43 @@ import { type NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const lat = searchParams.get("lat")
-    const lng = searchParams.get("lng")
-    const zoom = searchParams.get("zoom") || "14"
-    const width = searchParams.get("width") || "600"
-    const height = searchParams.get("height") || "400"
-
-    if (!lat || !lng) {
-      return NextResponse.json({ error: "Missing coordinates" }, { status: 400 })
-    }
-
-    // Get the API key from server environment
     const apiKey = process.env.HERE_API_KEY
 
     if (!apiKey) {
-      return NextResponse.json({ error: "Maps API key not configured" }, { status: 500 })
+      return NextResponse.json({ error: "HERE Maps API key not configured" }, { status: 500 })
     }
 
-    // Generate a static map image URL
-    const staticMapUrl = `https://image.maps.ls.hereapi.com/mia/1.6/mapview?apiKey=${apiKey}&lat=${lat}&lon=${lng}&zoom=${zoom}&w=${width}&h=${height}`
+    const searchParams = request.nextUrl.searchParams
+    const lat = searchParams.get("lat") || "0"
+    const lng = searchParams.get("lng") || "0"
+    const zoom = searchParams.get("zoom") || "14"
+    const width = searchParams.get("width") || "800"
+    const height = searchParams.get("height") || "600"
 
-    const response = await fetch(staticMapUrl)
+    // Construct the HERE Maps static image URL
+    const mapUrl = `https://maps.hereapi.com/v3/staticimage?apiKey=${apiKey}&lat=${lat}&lon=${lng}&z=${zoom}&w=${width}&h=${height}`
+
+    // Fetch the image from HERE Maps
+    const response = await fetch(mapUrl)
 
     if (!response.ok) {
-      throw new Error(`HERE API error: ${response.statusText}`)
+      throw new Error(`HERE Maps API error: ${response.statusText}`)
     }
 
-    const imageBuffer = await response.arrayBuffer()
+    // Get the image data
+    const imageData = await response.arrayBuffer()
 
-    // Return the image with proper headers
-    return new NextResponse(imageBuffer, {
+    // Return the image with the correct content type
+    return new NextResponse(imageData, {
       headers: {
         "Content-Type": "image/png",
-        "Cache-Control": "public, max-age=86400", // Cache for 24 hours
+        "Cache-Control": "public, max-age=3600",
       },
     })
   } catch (error) {
     console.error("Error generating static map:", error)
 
-    // Return a placeholder image instead of an error
-    return NextResponse.redirect(new URL(`/placeholder.svg?height=400&width=600&text=Map+Unavailable`, request.url))
+    // Return a placeholder image or error response
+    return NextResponse.json({ error: "Failed to generate map" }, { status: 500 })
   }
 }
