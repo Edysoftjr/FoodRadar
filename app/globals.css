@@ -2,8 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent zooming */
+html {
+  touch-action: manipulation;
+}
+
 body {
   font-family: "Inter", sans-serif;
+  overscroll-behavior: none;
 }
 
 @layer utilities {

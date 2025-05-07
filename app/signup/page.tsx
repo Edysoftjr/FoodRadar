@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Slider } from "@/components/ui/slider"
 import { Textarea } from "@/components/ui/textarea"
-import { MapPin } from "lucide-react"
+import { MapPin, Loader2 } from "lucide-react"
 import { GoogleSignInButton } from "@/components/google-signin-button"
 import { useAuth } from "@/components/auth-provider"
 import { useLocation } from "@/components/location-provider"
@@ -19,8 +19,8 @@ import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/components/ui/use-toast"
 
 export default function SignUpPage() {
-  const { signUp, loading } = useAuth()
-  const { location, requestLocationPermission } = useLocation()
+  const { signUp, loading: authLoading } = useAuth()
+  const { location, updateLocation } = useLocation()
   const { toast } = useToast()
 
   const [role, setRole] = useState("user")
@@ -32,6 +32,7 @@ export default function SignUpPage() {
   const [description, setDescription] = useState("")
   const [budget, setBudget] = useState(2500)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  const [detectingLocation, setDetectingLocation] = useState(false)
 
   const validateForm = () => {
     const errors: Record<string, string> = {}
@@ -65,6 +66,26 @@ export default function SignUpPage() {
         description: error.message || "Please check your information and try again",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleDetectLocation = async () => {
+    setDetectingLocation(true)
+    try {
+      await updateLocation()
+      toast({
+        title: "Location detected",
+        description: location.address || "Your location has been updated",
+      })
+    } catch (error: any) {
+      console.error("Location detection error:", error)
+      toast({
+        title: "Location detection failed",
+        description: error.message || "Please check your location settings and try again",
+        variant: "destructive",
+      })
+    } finally {
+      setDetectingLocation(false)
     }
   }
 
@@ -157,11 +178,20 @@ export default function SignUpPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={requestLocationPermission}
-                  disabled={location.loading}
+                  onClick={handleDetectLocation}
+                  disabled={detectingLocation}
                   className="rounded-full"
                 >
-                  {location.loading ? "Detecting..." : location.address ? "Update" : "Detect"}
+                  {detectingLocation ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Detecting...
+                    </>
+                  ) : location.address ? (
+                    "Update"
+                  ) : (
+                    "Detect"
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">We need your location to show nearby restaurants</p>
@@ -208,8 +238,8 @@ export default function SignUpPage() {
               </>
             )}
 
-            <Button type="submit" className="w-full rounded-full" disabled={loading}>
-              {loading ? "Creating Account..." : "Sign Up"}
+            <Button type="submit" className="w-full rounded-full" disabled={authLoading}>
+              {authLoading ? "Creating Account..." : "Sign Up"}
             </Button>
           </form>
 
