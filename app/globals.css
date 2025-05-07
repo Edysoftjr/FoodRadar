@@ -195,3 +195,81 @@ h6 {
 .location-button:hover {
   background-color: hsl(var(--primary) / 0.2);
 }
+
+/* Food-themed custom styles */
+.food-gradient {
+  background: linear-gradient(135deg, hsl(16, 85%, 55%, 0.1), hsl(25, 70%, 95%, 0.3));
+}
+
+.menu-item {
+  @apply p-4 rounded-xl border bg-card transition-all duration-300 hover:shadow-md;
+}
+
+.menu-item-image {
+  @apply rounded-lg overflow-hidden aspect-video mb-3;
+}
+
+.price-tag {
+  @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary;
+}
+
+.rating-stars {
+  @apply flex items-center text-primary;
+}
+
+/* Food category pills */
+.category-pill {
+  @apply inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground mr-2 mb-2;
+}
+
+/* Order status indicators */
+.status-pending {
+  @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+}
+
+.status-preparing {
+  @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200;
+}
+
+.status-ready {
+  @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+}
+
+.status-delivered {
+  @apply inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200;
+}
+
+/* Food-themed buttons */
+.order-button {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2;
+}
+
+.favorite-button {
+  @apply inline-flex items-center justify-center rounded-full p-2 text-primary hover:bg-primary/10 transition-colors;
+}
+
+/* Prevent zooming */
+html {
+  touch-action: pan-x pan-y;
+}
+
+body {
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Disable pinch zoom */
+input,
+textarea,
+button,
+select,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix for mobile overflow issues */
+html,
+body {
+  @apply overflow-x-hidden;
+  max-width: 100vw;
+}

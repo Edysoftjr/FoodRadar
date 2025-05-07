@@ -53,6 +53,10 @@ const config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Add some direct food-themed colors for convenience
+        "food-orange": "hsl(16, 85%, 55%)",
+        "food-peach": "hsl(25, 70%, 95%)",
+        "food-cream": "hsl(40, 30%, 98%)",
       },
       borderRadius: {
         lg: "var(--radius)",
