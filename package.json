@@ -59,8 +59,12 @@
     "vaul": "^0.9.6",
     "zod": "^3.24.1",
     "@supabase/supabase-js": "latest",
+    "prisma": "latest",
     "@supabase/auth-helpers-nextjs": "latest",
-    "react-icons": "latest"
+    "react-icons": "latest",
+    "@prisma/client": "latest",
+    "bcryptjs": "latest",
+    "child_process": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
