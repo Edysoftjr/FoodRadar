@@ -2,8 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Set the background color directly on the body */
 body {
   font-family: "Inter", sans-serif;
+  background-color: hsl(20, 15%, 12%);
+  color: hsl(40, 30%, 98%);
 }
 
 @layer utilities {
@@ -14,6 +17,49 @@ body {
 
 @layer base {
   :root {
+    /* Deep warm background with orange tint */
+    --background: 20 15% 12%;
+    --foreground: 40 30% 98%;
+
+    --card: 20 15% 15%;
+    --card-foreground: 40 30% 98%;
+
+    --popover: 20 15% 15%;
+    --popover-foreground: 40 30% 98%;
+
+    /* Warm orange-red primary color */
+    --primary: 16 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Soft peach secondary color */
+    --secondary: 25 70% 95%;
+    --secondary-foreground: 16 85% 40%;
+
+    --muted: 25 20% 92%;
+    --muted-foreground: 40 30% 80%;
+
+    --accent: 25 70% 95%;
+    --accent-foreground: 16 85% 40%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 15% 25%;
+    --input: 20 15% 25%;
+    --ring: 16 85% 55%;
+
+    --radius: 0.75rem;
+    --sidebar-background: 20 15% 12%;
+    --sidebar-foreground: 40 30% 98%;
+    --sidebar-primary: 16 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 25 70% 95%;
+    --sidebar-accent-foreground: 16 85% 40%;
+    --sidebar-border: 20 15% 25%;
+    --sidebar-ring: 16 85% 55%;
+  }
+
+  .light {
     /* Warm cream background with slight orange tint */
     --background: 40 30% 98%;
     --foreground: 20 10% 15%;
@@ -54,47 +100,6 @@ body {
     --sidebar-accent-foreground: 16 85% 40%;
     --sidebar-border: 20 15% 90%;
     --sidebar-ring: 16 85% 55%;
-  }
-
-  .dark {
-    /* Deep warm background with orange tint for dark mode */
-    --background: 20 15% 12%;
-    --foreground: 40 30% 98%;
-
-    --card: 20 15% 15%;
-    --card-foreground: 40 30% 98%;
-
-    --popover: 20 15% 15%;
-    --popover-foreground: 40 30% 98%;
-
-    /* Brighter orange-red for dark mode */
-    --primary: 16 85% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    /* Darker peach for dark mode */
-    --secondary: 25 50% 20%;
-    --secondary-foreground: 40 30% 98%;
-
-    --muted: 20 15% 20%;
-    --muted-foreground: 40 30% 80%;
-
-    --accent: 25 50% 20%;
-    --accent-foreground: 40 30% 98%;
-
-    --destructive: 0 62.8% 40.6%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 20 15% 25%;
-    --input: 20 15% 25%;
-    --ring: 16 85% 60%;
-    --sidebar-background: 20 15% 12%;
-    --sidebar-foreground: 40 30% 98%;
-    --sidebar-primary: 16 85% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 25 50% 20%;
-    --sidebar-accent-foreground: 40 30% 98%;
-    --sidebar-border: 20 15% 25%;
-    --sidebar-ring: 16 85% 60%;
   }
 }
 
