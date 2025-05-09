@@ -23,7 +23,7 @@ export default function SignUpPage() {
   const { location, updateLocation, requestLocationPermission } = useLocation()
   const { toast } = useToast()
 
-  const [role, setRole] = useState("USER")
+  const [role, setRole] = useState("user")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -44,7 +44,7 @@ export default function SignUpPage() {
     if (password.length < 6) errors.password = "Password must be at least 6 characters"
     if (password !== confirmPassword) errors.confirmPassword = "Passwords do not match"
 
-    if (role === "VENDOR") {
+    if (role === "vendor") {
       if (!restaurantName.trim()) errors.restaurantName = "Restaurant name is required"
     }
 
@@ -58,7 +58,7 @@ export default function SignUpPage() {
     if (!validateForm()) return
 
     try {
-      await signUp(email, password, name, role as "USER" | "VENDOR")
+      await signUp(email, password, name, role as "user" | "vendor")
     } catch (error: any) {
       console.error("Sign up error:", error)
       toast({
@@ -107,12 +107,12 @@ export default function SignUpPage() {
           <CardDescription>Join FoodRadar to discover restaurants and meals within your budget.</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="USER" className="mb-6" onValueChange={setRole}>
+          <Tabs defaultValue="user" className="mb-6" onValueChange={setRole}>
             <TabsList className="grid w-full grid-cols-2 rounded-full">
-              <TabsTrigger value="USER" className="rounded-full">
+              <TabsTrigger value="user" className="rounded-full">
                 Normal User
               </TabsTrigger>
-              <TabsTrigger value="VENDOR" className="rounded-full">
+              <TabsTrigger value="vendor" className="rounded-full">
                 Restaurant Owner
               </TabsTrigger>
             </TabsList>
@@ -202,7 +202,7 @@ export default function SignUpPage() {
               <p className="text-xs text-muted-foreground">We need your location to show nearby restaurants</p>
             </div>
 
-            {role === "USER" && (
+            {role === "user" && (
               <div className="space-y-2">
                 <Label>Budget Range (₦)</Label>
                 <div className="pt-4">
@@ -216,7 +216,7 @@ export default function SignUpPage() {
               </div>
             )}
 
-            {role === "VENDOR" && (
+            {role === "vendor" && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="restaurantName">Restaurant Name</Label>

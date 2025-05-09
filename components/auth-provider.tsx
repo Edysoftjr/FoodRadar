@@ -3,15 +3,15 @@
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { signIn, signOut, useSession } from "next-auth/react"
 import { useToast } from "@/components/ui/use-toast"
+import { signInWithEmail, signInWithGoogle, signUpWithEmail, signOut, getCurrentUser } from "@/lib/supabase-auth"
 
 type User = {
   id: string
   name: string
   email: string
   image?: string
-  role: "USER" | "VENDOR" | "ADMIN"
+  role: "user" | "vendor" | "admin"
 } | null
 
 type AuthContextType = {
@@ -19,7 +19,7 @@ type AuthContextType = {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signInWithGoogle: () => Promise<void>
-  signUp: (email: string, password: string, name: string, role: "USER" | "VENDOR") => Promise<void>
+  signUp: (email: string, password: string, name: string, role: "user" | "vendor") => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -31,50 +31,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { toast } = useToast()
-  const { data: session, status } = useSession()
 
-  // Update user state when session changes
+  // Check if user is logged in on mount and route changes
   useEffect(() => {
-    if (status === "loading") {
-      setLoading(true)
-      return
+    const checkAuth = async () => {
+      try {
+        setLoading(true)
+        const { user: currentUser, error } = await getCurrentUser()
+
+        if (error) throw error
+
+        if (currentUser) {
+          setUser({
+            id: currentUser.id,
+            name: currentUser.name || currentUser.email?.split("@")[0] || "User",
+            email: currentUser.email || "",
+            image: currentUser.image,
+            role: currentUser.role || "user",
+          })
+        } else {
+          setUser(null)
+        }
+      } catch (error) {
+        console.error("Auth check failed:", error)
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
 
-    if (session?.user) {
-      setUser({
-        id: session.user.id as string,
-        name: session.user.name || "User",
-        email: session.user.email || "",
-        image: session.user.image || undefined,
-        role: (session.user.role as "USER" | "VENDOR" | "ADMIN") || "USER",
-      })
-    } else {
-      setUser(null)
-    }
-
-    setLoading(false)
-  }, [session, status])
+    checkAuth()
+  }, [pathname])
 
   // Sign in with email and password
   const handleSignIn = async (email: string, password: string) => {
     try {
       setLoading(true)
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      })
+      const { data, error } = await signInWithEmail(email, password)
 
-      if (result?.error) {
-        throw new Error(result.error)
+      if (error) throw error
+
+      if (data?.user) {
+        toast({
+          title: "Signed in successfully",
+          description: `Welcome back!`,
+        })
+
+        router.push("/home")
       }
-
-      toast({
-        title: "Signed in successfully",
-        description: `Welcome back!`,
-      })
-
-      router.push("/home")
     } catch (error: any) {
       console.error("Sign in failed:", error)
       toast({
@@ -91,7 +95,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignInWithGoogle = async () => {
     try {
       setLoading(true)
-      await signIn("google", { callbackUrl: "/home" })
+      const { data, error } = await signInWithGoogle()
+
+      if (error) throw error
+
+      // The redirect happens automatically, so we don't need to do anything here
     } catch (error: any) {
       console.error("Google sign in failed:", error)
       toast({
@@ -104,47 +112,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Sign up with email and password
-  const handleSignUp = async (email: string, password: string, name: string, role: "USER" | "VENDOR") => {
+  const handleSignUp = async (email: string, password: string, name: string, role: "user" | "vendor") => {
     try {
       setLoading(true)
+      const { data, error } = await signUpWithEmail(email, password, name, role)
 
-      // Register the user via API
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          name,
-          role,
-        }),
-      })
+      if (error) throw error
 
-      const data = await response.json()
+      if (data?.user) {
+        toast({
+          title: "Account created successfully",
+          description: `Welcome to FoodRadar, ${name}!`,
+        })
 
-      if (!response.ok) {
-        throw new Error(data.message || "Registration failed")
+        router.push(role === "user" ? "/onboarding" : "/admin")
       }
-
-      // Sign in the user after successful registration
-      const result = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      })
-
-      if (result?.error) {
-        throw new Error(result.error)
-      }
-
-      toast({
-        title: "Account created successfully",
-        description: `Welcome to FoodRadar, ${name}!`,
-      })
-
-      router.push(role === "USER" ? "/onboarding" : "/admin")
     } catch (error: any) {
       console.error("Sign up failed:", error)
       toast({
@@ -161,7 +143,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const handleSignOut = async () => {
     try {
       setLoading(true)
-      await signOut({ redirect: false })
+      const { error } = await signOut()
+
+      if (error) throw error
 
       setUser(null)
 
