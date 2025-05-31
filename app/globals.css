@@ -1,0 +1,208 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: "Inter", sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* Warm cream background with slight orange tint */
+    --background: 30 30% 98%;
+    --foreground: 20 10% 15%;
+
+    --card: 30 30% 98%;
+    --card-foreground: 20 10% 15%;
+
+    --popover: 30 30% 98%;
+    --popover-foreground: 20 10% 15%;
+
+    /* Warm orange-red primary color */
+    --primary: 16 85% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Soft peach secondary color */
+    --secondary: 25 70% 95%;
+    --secondary-foreground: 16 85% 40%;
+
+    --muted: 25 20% 92%;
+    --muted-foreground: 20 10% 40%;
+
+    --accent: 25 70% 95%;
+    --accent-foreground: 16 85% 40%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 15% 90%;
+    --input: 20 15% 90%;
+    --ring: 16 85% 55%;
+
+    --radius: 0.75rem;
+    --sidebar-background: 30 30% 98%;
+    --sidebar-foreground: 20 10% 15%;
+    --sidebar-primary: 16 85% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 25 70% 95%;
+    --sidebar-accent-foreground: 16 85% 40%;
+    --sidebar-border: 20 15% 90%;
+    --sidebar-ring: 16 85% 55%;
+  }
+
+  .dark {
+    /* Deep warm background with orange tint for dark mode */
+    --background: 20 15% 12%;
+    --foreground: 30 30% 98%;
+
+    --card: 20 15% 15%;
+    --card-foreground: 30 30% 98%;
+
+    --popover: 20 15% 15%;
+    --popover-foreground: 30 30% 98%;
+
+    /* Brighter orange-red for dark mode */
+    --primary: 16 85% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Darker peach for dark mode */
+    --secondary: 25 50% 20%;
+    --secondary-foreground: 30 30% 98%;
+
+    --muted: 20 15% 20%;
+    --muted-foreground: 30 30% 80%;
+
+    --accent: 25 50% 20%;
+    --accent-foreground: 30 30% 98%;
+
+    --destructive: 0 62.8% 40.6%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 20 15% 25%;
+    --input: 20 15% 25%;
+    --ring: 16 85% 60%;
+    --sidebar-background: 20 15% 12%;
+    --sidebar-foreground: 30 30% 98%;
+    --sidebar-primary: 16 85% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 25 50% 20%;
+    --sidebar-accent-foreground: 30 30% 98%;
+    --sidebar-border: 20 15% 25%;
+    --sidebar-ring: 16 85% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom styles for enhanced mobile and desktop experience */
+.card-hover-effect {
+  @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+}
+
+.food-card {
+  @apply overflow-hidden rounded-xl border bg-card shadow-sm card-hover-effect;
+}
+
+.food-card-image {
+  @apply aspect-video w-full object-cover transition-transform duration-300 group-hover:scale-105;
+}
+
+.gradient-bg {
+  @apply bg-gradient-to-b from-secondary via-secondary/30 to-background;
+}
+
+/* Responsive typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  @apply font-medium tracking-tight text-balance;
+}
+
+@media (max-width: 640px) {
+  h1 {
+    @apply text-2xl;
+  }
+  h2 {
+    @apply text-xl;
+  }
+}
+
+/* Enhanced mobile navigation */
+.mobile-nav-item {
+  @apply flex items-center justify-center p-2 rounded-lg;
+}
+
+/* Community section styles */
+.comment-card {
+  @apply p-4 rounded-xl border bg-card/50 hover:bg-card/80 transition-colors;
+}
+
+.comment-actions {
+  @apply flex items-center gap-2 text-xs text-muted-foreground;
+}
+
+.comment-like-button {
+  @apply flex items-center gap-1 hover:text-primary transition-colors;
+}
+
+.comment-reply-button {
+  @apply flex items-center gap-1 hover:text-primary transition-colors;
+}
+
+/* Map container - using standard CSS instead of @apply */
+.map-container {
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  height: 300px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .map-container {
+    height: 400px;
+  }
+}
+
+/* Location button */
+.location-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-radius: 9999px;
+  padding: 0.5rem 1rem;
+  transition: background-color 0.2s;
+}
+
+.location-button:hover {
+  background-color: hsl(var(--primary) / 0.2);
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
