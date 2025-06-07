@@ -10,27 +10,23 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id: followingId } = params
+    const { id: restaurantId } = params
 
-    if (session.user.id === followingId) {
-      return NextResponse.json({ error: "Cannot follow yourself" }, { status: 400 })
-    }
-
-    // Check if user exists
-    const userToFollow = await prisma.user.findUnique({
-      where: { id: followingId },
+    // Check if restaurant exists
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
     })
 
-    if (!userToFollow) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    if (!restaurant) {
+      return NextResponse.json({ error: "Restaurant not found" }, { status: 404 })
     }
 
     // Check if already following
     const existingFollow = await prisma.follow.findUnique({
       where: {
-        followerId_followingId: {
+        followerId_restaurantId: {
           followerId: session.user.id,
-          followingId,
+          restaurantId,
         },
       },
     })
@@ -41,13 +37,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         where: { id: existingFollow.id },
       })
 
+      // Create notification for unfollow (optional)
       return NextResponse.json({ message: "Unfollowed successfully", isFollowing: false })
     } else {
       // Follow
       await prisma.follow.create({
         data: {
           followerId: session.user.id,
-          followingId,
+          restaurantId,
         },
       })
 
@@ -56,11 +53,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         data: {
           type: "FOLLOW",
           title: "New Follower",
-          message: `${session.user.name} started following you`,
-          userId: followingId,
+          message: `${session.user.name} started following your restaurant`,
+          userId: restaurant.ownerId,
           senderId: session.user.id,
           data: {
-            followerId: session.user.id,
+            restaurantId,
             followerName: session.user.name,
           },
         },
@@ -71,5 +68,30 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
   } catch (error) {
     console.error("Error toggling follow:", error)
     return NextResponse.json({ error: "Failed to toggle follow" }, { status: 500 })
+  }
+}
+
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ isFollowing: false })
+    }
+
+    const { id: restaurantId } = params
+
+    const follow = await prisma.follow.findUnique({
+      where: {
+        followerId_restaurantId: {
+          followerId: session.user.id,
+          restaurantId,
+        },
+      },
+    })
+
+    return NextResponse.json({ isFollowing: !!follow })
+  } catch (error) {
+    console.error("Error checking follow status:", error)
+    return NextResponse.json({ isFollowing: false })
   }
 }

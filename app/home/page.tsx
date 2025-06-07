@@ -562,85 +562,115 @@ export default function HomePage() {
   )
 }
 
-function RestaurantCard({ restaurant }: { restaurant: Restaurant }) {
-  return (
-    <Link href={`/restaurant/${restaurant.id}`}>
-      <div className="food-card group h-full flex flex-col border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-        <div className="aspect-video overflow-hidden bg-muted relative">
+
+function RestaurantCard({ restaurant }: { restaurant: any }) {
+  // If this is a placeholder restaurant (no data yet)
+  if (!restaurant.name) {
+    return (
+      <div className="food-card group">
+        <div className="aspect-video overflow-hidden bg-muted">
           <img
-            src={restaurant.images?.[0] || "/placeholder.svg?height=225&width=400"}
-            alt={restaurant.name}
-            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            src="/placeholder.jpeg?height=225&width=400"
+            alt="Restaurant"
+            className="food-card-image"
             width={400}
             height={225}
           />
-          {restaurant.distance && (
-            <Badge className="absolute top-2 right-2 bg-black/70 text-white">{restaurant.distance}km</Badge>
-          )}
         </div>
-        <div className="p-4 flex-1 flex flex-col">
-          <div className="flex items-start justify-between mb-2">
-            <h3 className="font-semibold line-clamp-1 flex-1">{restaurant.name}</h3>
-            <div className="flex items-center gap-1 ml-2">
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-medium">{restaurant.rating.toFixed(1)}</span>
-            </div>
+        <div className="p-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Restaurant Name</h3>
+            <span className="text-xs text-muted-foreground">2.3 km</span>
           </div>
-
-          {restaurant.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{restaurant.description}</p>
-          )}
-
-          <div className="mt-1 flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">
-              Avg: ₦{restaurant.priceRange.average.toLocaleString()}
-            </span>
-            <span className="text-xs text-muted-foreground">{restaurant.reviewCount} reviews</span>
+          <div className="mt-1 flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Avg: ₦2,500</span>
+            <span className="text-sm">★★★★☆</span>
           </div>
-
-          {/* Featured Meals */}
-          {restaurant.meals && restaurant.meals.length > 0 && (
-            <div className="mb-3">
-              <h4 className="text-xs font-medium text-muted-foreground mb-2">Featured Meals</h4>
-              <div className="flex gap-2 overflow-x-auto">
-                {restaurant.meals.slice(0, 3).map((meal) => (
-                  <div key={meal.id} className="flex-shrink-0 w-16">
-                    <div className="aspect-square rounded-md overflow-hidden bg-muted mb-1">
-                      <img
-                        src={meal.image || "/placeholder.svg?height=64&width=64"}
-                        alt={meal.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <p className="text-xs text-center truncate">{meal.name}</p>
-                    <p className="text-xs text-center text-primary font-medium">₦{meal.price.toLocaleString()}</p>
-                  </div>
-                ))}
-                {restaurant.meals.length > 3 && (
-                  <div className="flex-shrink-0 w-16 flex items-center justify-center">
-                    <div className="aspect-square rounded-md bg-muted/50 flex items-center justify-center">
-                      <span className="text-xs text-muted-foreground">+{restaurant.meals.length - 3}</span>
-                    </div>
-                  </div>
-                )}
+          <div className="mt-3 flex gap-2">
+            <div className="relative h-12 w-12 overflow-hidden rounded-md">
+              <img
+                src="/placeholder1.jpeg?height=48&width=48"
+                alt="Meal"
+                className="h-full w-full object-cover"
+                width={48}
+                height={48}
+              />
+              <div className="absolute bottom-0 w-full bg-primary/80 px-1 py-0.5 text-center text-[10px] text-white">
+                ₦1,800
               </div>
             </div>
-          )}
-
-          <div className="mt-auto">
-            <div className="flex flex-wrap gap-1 mb-3">
-              {restaurant.categories?.slice(0, 2).map((category: string) => (
-                <Badge key={category} variant="secondary" className="text-xs">
-                  {category}
-                </Badge>
-              ))}
+            <div className="relative h-12 w-12 overflow-hidden rounded-md">
+              <img
+                src="/placeholder.jpeg?height=48&width=48"
+                alt="Meal"
+                className="h-full w-full object-cover"
+                width={48}
+                height={48}
+              />
+              <div className="absolute bottom-0 w-full bg-primary/80 px-1 py-0.5 text-center text-[10px] text-white">
+                ₦2,200
+              </div>
             </div>
-            <Button className="w-full rounded-full" size="sm">
-              View Restaurant
-            </Button>
           </div>
+          <Button className="mt-3 w-full rounded-full" size="sm">
+            View Restaurant
+          </Button>
         </div>
       </div>
-    </Link>
+    )
+  }
+
+  // Real restaurant data
+  return (
+    <div className="food-card group">
+      <div className="aspect-video overflow-hidden bg-muted">
+        <img
+          src={restaurant.images?.[0] || "/placeholder.jpeg?height=225&width=400"}
+          alt={restaurant.name}
+          className="food-card-image"
+          width={400}
+          height={225}
+        />
+      </div>
+      <div className="p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">{restaurant.name}</h3>
+          <span className="text-xs text-muted-foreground">
+            {restaurant.location?.distance ? `${(restaurant.location.distance / 1000).toFixed(1)} km` : ""}
+          </span>
+        </div>
+        <div className="mt-1 flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            {restaurant.priceRange ? `Avg: ₦${restaurant.priceRange}` : ""}
+          </span>
+          <span className="text-sm">
+            {restaurant.rating
+              ? `★`.repeat(Math.floor(restaurant.rating)) + `☆`.repeat(5 - Math.floor(restaurant.rating))
+              : ""}
+          </span>
+        </div>
+        <div className="mt-3 flex gap-2">
+          {restaurant.meals?.slice(0, 2).map((meal: any) => (
+            <div key={meal.id} className="relative h-12 w-12 overflow-hidden rounded-md">
+              <img
+                src={meal.image || "/placeholder1.jpeg?height=48&width=48"}
+                alt={meal.name}
+                className="h-full w-full object-cover"
+                width={48}
+                height={48}
+              />
+              <div className="absolute bottom-0 w-full bg-primary/80 px-1 py-0.5 text-center text-[10px] text-white">
+                ₦{meal.price}
+              </div>
+            </div>
+          ))}
+        </div>
+        <Link href={`/restaurant/${restaurant.id}`}>
+          <Button className="mt-3 w-full rounded-full" size="sm">
+            View Restaurant
+          </Button>
+        </Link>
+      </div>
+    </div>
   )
 }

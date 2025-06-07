@@ -26,7 +26,55 @@ export async function GET() {
     const restaurant = await prisma.restaurant.findFirst({
       where: { ownerId: session.user.id },
       include: {
-        meals: true,
+        meals: {
+          orderBy: { createdAt: "desc" },
+        },
+        orders: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                email: true,
+              },
+            },
+            items: true,
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+        followers: {
+          include: {
+            follower: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+                email: true,
+              },
+            },
+          },
+        },
+        reviews: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 10,
+        },
+        promotions: {
+          where: {
+            isActive: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
     })
 
@@ -34,7 +82,26 @@ export async function GET() {
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 })
     }
 
-    return NextResponse.json(restaurant)
+    // Calculate analytics
+    const totalOrders = restaurant.orders.length
+    const totalRevenue = restaurant.orders.reduce((sum, order) => sum + order.total, 0)
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+    const customersCount = new Set(restaurant.orders.map((order) => order.userId)).size
+
+    const restaurantWithAnalytics = {
+      ...restaurant,
+      analytics: {
+        totalOrders,
+        totalRevenue,
+        averageOrderValue,
+        customersCount,
+        followersCount: restaurant.followers.length,
+        reviewsCount: restaurant.reviews.length,
+        averageRating: restaurant.rating,
+      },
+    }
+
+    return NextResponse.json(restaurantWithAnalytics)
   } catch (error) {
     console.error("Restaurant profile fetch error:", error)
     return NextResponse.json({ error: "Failed to fetch restaurant profile" }, { status: 500 })
@@ -85,9 +152,11 @@ export async function PUT(request: Request) {
     const galleryImageUrls: string[] = []
 
     for (const image of galleryImages) {
-      const imageUrl = await uploadFile(image, STORAGE_PATHS.RESTAURANTS.GALLERY)
-      if (imageUrl) {
-        galleryImageUrls.push(imageUrl)
+      if (image instanceof File) {
+        const imageUrl = await uploadFile(image, STORAGE_PATHS.RESTAURANTS.GALLERY)
+        if (imageUrl) {
+          galleryImageUrls.push(imageUrl)
+        }
       }
     }
 

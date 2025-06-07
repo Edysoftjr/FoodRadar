@@ -1,51 +1,80 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "../auth/[...nextauth]/route"
+import { prisma } from "@/lib/prisma"
 
-// Dummy notifications data
-const dummyNotifications = [
-  {
-    id: "1",
-    title: "New Order",
-    message: "You have a new order from John Doe",
-    time: "2 minutes ago",
-    type: "order",
-    read: false,
-  },
-  {
-    id: "2",
-    title: "Order Ready",
-    message: "Your order from Bukka Hut is ready for pickup",
-    time: "15 minutes ago",
-    type: "order_update",
-    read: false,
-  },
-  {
-    id: "3",
-    title: "New Follower",
-    message: "Sarah Johnson started following you",
-    time: "1 hour ago",
-    type: "social",
-    read: true,
-  },
-  {
-    id: "4",
-    title: "Restaurant Review",
-    message: "Someone reviewed your restaurant",
-    time: "2 hours ago",
-    type: "review",
-    read: true,
-  },
-]
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    await new Promise((resolve) => setTimeout(resolve, 300))
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "20")
+    const skip = (page - 1) * limit
+
+    const notifications = await prisma.notification.findMany({
+      where: { userId: session.user.id },
+      include: {
+        sender: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
+    })
+
+    const transformedNotifications = notifications.map((notification) => ({
+      id: notification.id,
+      title: notification.title,
+      message: notification.message,
+      type: notification.type,
+      isRead: notification.isRead,
+      createdAt: notification.createdAt.toISOString(),
+      sender: notification.sender,
+      data: notification.data,
+    }))
 
     return NextResponse.json({
-      notifications: dummyNotifications,
+      notifications: transformedNotifications,
       success: true,
     })
   } catch (error) {
     console.error("Error fetching notifications:", error)
     return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const body = await request.json()
+    const { notificationIds, markAsRead } = body
+
+    await prisma.notification.updateMany({
+      where: {
+        id: { in: notificationIds },
+        userId: session.user.id,
+      },
+      data: {
+        isRead: markAsRead,
+      },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error("Error updating notifications:", error)
+    return NextResponse.json({ error: "Failed to update notifications" }, { status: 500 })
   }
 }

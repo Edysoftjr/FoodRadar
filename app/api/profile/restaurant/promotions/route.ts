@@ -2,9 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../../auth/[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
-import { uploadFile, STORAGE_PATHS } from "@/lib/supabase-storage"
 
-// GET /api/profile/restaurant/meals - Get all meals for the restaurant
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
@@ -20,7 +18,7 @@ export async function GET() {
     })
 
     if (user?.role !== "VENDOR") {
-      return NextResponse.json({ error: "Only vendors can access meals" }, { status: 403 })
+      return NextResponse.json({ error: "Only vendors can access promotions" }, { status: 403 })
     }
 
     // Find the restaurant
@@ -32,19 +30,18 @@ export async function GET() {
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 })
     }
 
-    const meals = await prisma.meal.findMany({
+    const promotions = await prisma.promotion.findMany({
       where: { restaurantId: restaurant.id },
       orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json({ meals })
+    return NextResponse.json({ promotions })
   } catch (error) {
-    console.error("Meals fetch error:", error)
-    return NextResponse.json({ error: "Failed to fetch meals" }, { status: 500 })
+    console.error("Promotions fetch error:", error)
+    return NextResponse.json({ error: "Failed to fetch promotions" }, { status: 500 })
   }
 }
 
-// POST /api/profile/restaurant/meals - Create a new meal for the restaurant
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
@@ -60,7 +57,7 @@ export async function POST(request: Request) {
     })
 
     if (user?.role !== "VENDOR") {
-      return NextResponse.json({ error: "Only vendors can add meals" }, { status: 403 })
+      return NextResponse.json({ error: "Only vendors can create promotions" }, { status: 403 })
     }
 
     // Find the restaurant
@@ -72,44 +69,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 })
     }
 
-    // Handle multipart form data for file uploads
-    const formData = await request.formData()
-    const name = formData.get("name") as string
-    const description = formData.get("description") as string
-    const price = Number(formData.get("price"))
-    const categories = JSON.parse((formData.get("categories") as string) || "[]")
+    const body = await request.json()
+    const { title, description, discountPercentage, maxRadius, budget, duration } = body
 
     // Validate required fields
-    if (!name || !price) {
-      return NextResponse.json({ error: "Name and price are required" }, { status: 400 })
+    if (!title || !description || !discountPercentage || !maxRadius || !budget || !duration) {
+      return NextResponse.json({ error: "All fields are required" }, { status: 400 })
     }
 
-    // Handle meal image upload
-    const mealImage = formData.get("image") as File | null
-    let imageUrl = null
+    const startDate = new Date()
+    const endDate = new Date()
+    endDate.setHours(endDate.getHours() + duration)
 
-    if (mealImage) {
-      imageUrl = await uploadFile(mealImage, STORAGE_PATHS.MEALS)
-    }
-
-    // Create the meal
-    const meal = await prisma.meal.create({
+    const promotion = await prisma.promotion.create({
       data: {
-        name,
+        title,
         description,
-        price,
-        categories,
-        image: imageUrl,
-        isAvailable: true,
+        discountPercentage,
+        maxRadius,
+        budget,
+        startDate,
+        endDate,
+        isActive: true,
         restaurant: {
           connect: { id: restaurant.id },
         },
       },
     })
 
-    return NextResponse.json(meal)
+    return NextResponse.json(promotion)
   } catch (error) {
-    console.error("Meal creation error:", error)
-    return NextResponse.json({ error: "Failed to create meal" }, { status: 500 })
+    console.error("Promotion creation error:", error)
+    return NextResponse.json({ error: "Failed to create promotion" }, { status: 500 })
   }
 }

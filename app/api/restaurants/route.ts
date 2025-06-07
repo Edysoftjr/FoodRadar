@@ -6,109 +6,128 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const latitude = searchParams.get("latitude")
     const longitude = searchParams.get("longitude")
-    const category = searchParams.get("category")
     const search = searchParams.get("search")
+    const category = searchParams.get("category")
+    const page = Number.parseInt(searchParams.get("page") || "1")
+    const limit = Number.parseInt(searchParams.get("limit") || "20")
+    const skip = (page - 1) * limit
 
-    // Build where clause for filtering
-    const where: any = {}
-
-    // Filter by category if provided
-    if (category && category !== "all") {
-      where.categories = {
-        has: category,
-      }
+    const whereClause: any = {
+      isActive: true,
     }
 
-    // Filter by search query if provided
+    // Search functionality
     if (search) {
-      where.OR = [
-        {
-          name: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-        {
-          description: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-        {
-          categories: {
-            hasSome: [search],
-          },
-        },
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { categories: { has: search } },
       ]
     }
 
-    // Fetch restaurants from database
+    // Category filter
+    if (category && category !== "all") {
+      whereClause.categories = { has: category }
+    }
+
+    // Get promoted restaurants first if user location is provided
+    let promotedRestaurants: any[] = []
+    if (latitude && longitude) {
+      try {
+        const promotedResponse = await fetch(
+          `${process.env.NEXTAUTH_URL}/api/restaurants/promoted?latitude=${latitude}&longitude=${longitude}`,
+        )
+        if (promotedResponse.ok) {
+          const promotedData = await promotedResponse.json()
+          promotedRestaurants =
+            promotedData.promotions?.map((p: any) => ({
+              ...p.restaurant,
+              isPromoted: true,
+              promotion: {
+                title: p.title,
+                discountPercentage: p.discountPercentage,
+              },
+            })) || []
+        }
+      } catch (error) {
+        console.error("Error fetching promoted restaurants:", error)
+      }
+    }
+
     const restaurants = await prisma.restaurant.findMany({
-      where,
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        address: true,
-        coordinates: true,
-        images: true,
-        categories: true,
-        priceRange: true,
-        rating: true,
-        reviewCount: true,
-        phone: true,
-        website: true,
-        owner: {
+      where: whereClause,
+      include: {
+        meals: {
+          where: { isAvailable: true },
+          take: 3,
+          orderBy: { createdAt: "desc" },
+        },
+        _count: {
           select: {
-            id: true,
-            name: true,
-            image: true,
+            reviews: true,
+            followers: true,
           },
         },
       },
-      orderBy: {
-        rating: "desc",
-      },
+      skip,
+      take: limit,
+      orderBy: { createdAt: "desc" },
     })
 
-    // If user location is provided, we could calculate distances here
-    // For now, we'll return the restaurants as-is
-    const formattedRestaurants = restaurants.map((restaurant) => ({
-      ...restaurant,
-      coordinates: restaurant.coordinates as { latitude: number; longitude: number },
-      priceRange: restaurant.priceRange as { min: number; max: number; average: number },
-    }))
+    // Calculate distance if coordinates provided
+    let restaurantsWithDistance = restaurants
+    if (latitude && longitude) {
+      const userLat = Number.parseFloat(latitude)
+      const userLng = Number.parseFloat(longitude)
 
-    return NextResponse.json({ restaurants: formattedRestaurants })
+      restaurantsWithDistance = restaurants.map((restaurant) => {
+        const coords = restaurant.coordinates as { latitude: number; longitude: number }
+        const distance = calculateDistance(userLat, userLng, coords.latitude, coords.longitude)
+        return {
+          ...restaurant,
+          distance,
+        }
+      })
+
+      // Sort by distance
+      restaurantsWithDistance.sort((a, b) => (a.distance || 0) - (b.distance || 0))
+    }
+
+    // Merge promoted restaurants at the top
+    const finalRestaurants = [
+      ...promotedRestaurants,
+      ...restaurantsWithDistance.filter((r) => !promotedRestaurants.some((p) => p.id === r.id)),
+    ]
+
+    const total = await prisma.restaurant.count({ where: whereClause })
+
+    return NextResponse.json({
+      restaurants: finalRestaurants,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    })
   } catch (error) {
     console.error("Error fetching restaurants:", error)
     return NextResponse.json({ error: "Failed to fetch restaurants" }, { status: 500 })
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const data = await request.json()
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371 // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1)
+  const dLon = deg2rad(lon2 - lon1)
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  const d = R * c // Distance in km
+  return Math.round(d * 10) / 10
+}
 
-    // Create a new restaurant in the database
-    const restaurant = await prisma.restaurant.create({
-      data: {
-        name: data.name,
-        description: data.description,
-        address: data.address,
-        coordinates: data.coordinates,
-        images: data.images || [],
-        categories: data.categories || [],
-        priceRange: data.priceRange,
-        phone: data.phone,
-        website: data.website,
-        ownerId: data.ownerId,
-      },
-    })
-
-    return NextResponse.json({ success: true, restaurant })
-  } catch (error) {
-    console.error("Error creating restaurant:", error)
-    return NextResponse.json({ error: "Failed to create restaurant" }, { status: 500 })
-  }
+function deg2rad(deg: number): number {
+  return deg * (Math.PI / 180)
 }

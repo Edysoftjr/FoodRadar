@@ -1,3 +1,5 @@
+
+
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../auth/[...nextauth]/route"
@@ -25,6 +27,7 @@ export async function GET() {
         preferences: true,
         location: true,
         phone: true,
+        createdAt: true,
         restaurants: {
           select: {
             id: true,
@@ -76,6 +79,7 @@ export async function GET() {
             id: true,
             total: true,
             createdAt: true,
+            status: true,
             restaurant: {
               select: {
                 id: true,
@@ -89,32 +93,29 @@ export async function GET() {
           },
           take: 5,
         },
+       
       },
     })
-
+    
+    console.log(user)
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Add mock social data for now
-    const userWithSocial = {
+    /* Calculate stats
+    const followersCount = user.followers.length
+    const followingCount = user.following.length
+*/
+    const userWithStats = {
       ...user,
-      bio: user.preferences?.join(", ") || "",
-      followersCount: Math.floor(Math.random() * 100) + 50,
-      followingCount: Math.floor(Math.random() * 50) + 20,
-      isFollowing: Math.random() > 0.5, // Random follow status for demo
+     /* followersCount,
+      followingCount,*/
+      isFollowing: false, // This would be calculated based on the requesting user
       recentOrders: user.orders,
-      visitedRestaurants: [
-        {
-          id: "1",
-          name: "Sample Restaurant",
-          images: ["/placeholder.svg?height=64&width=64"],
-          lastVisited: new Date().toISOString(),
-        },
-      ],
+      visitedRestaurants: [], // This would be calculated from order history
     }
 
-    return NextResponse.json(userWithSocial)
+    return NextResponse.json(userWithStats)
   } catch (error) {
     console.error("Profile fetch error:", error)
     return NextResponse.json({ error: "Failed to fetch profile" }, { status: 500 })
@@ -158,6 +159,7 @@ export async function PUT(request: Request) {
       where: { id: session.user.id },
       data: {
         name,
+        bio,
         budget,
         preferences: preferences || undefined,
         location: location || undefined,
@@ -174,6 +176,7 @@ export async function PUT(request: Request) {
         preferences: true,
         location: true,
         phone: true,
+        bio: true,
       },
     })
 
@@ -183,3 +186,6 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Failed to update profile" }, { status: 500 })
   }
 }
+
+
+

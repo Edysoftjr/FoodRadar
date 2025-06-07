@@ -13,7 +13,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "FoodRadar - Find Food Within Your Budget",
   description: "Discover restaurants and meals that fit your budget and preferences",
-  generator: "v0.dev",
+  generator: "foodradar inc",
 }
 
 export default function RootLayout({

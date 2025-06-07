@@ -577,7 +577,7 @@ export default function StatusPage() {
       </header>
 
       <main className="flex-1">
-<div className="mb-6">
+      <div className="mb-6">
           <div className="container px-4 mx-auto max-w-6xl">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold">Stories</h2>

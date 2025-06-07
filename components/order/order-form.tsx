@@ -1,63 +1,95 @@
 "use client"
 
-import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useToast } from "@/components/ui/use-toast"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { MapPin, Phone, Plus, Minus, ShoppingCart, Loader2 } from "lucide-react"
 import { useAuth } from "@/components/auth-provider"
 import { useLocation } from "@/components/location-provider"
-import { Loader2, Phone } from "lucide-react"
-import { supabaseClient } from "@/lib/supabase-auth"
+import { useToast } from "@/components/ui/use-toast"
 
-interface OrderFormProps {
-  mealId: string
-  mealName: string
-  mealPrice: number
-  restaurantId: string
-  restaurantName: string
-  onSuccess?: () => void
+type Meal = {
+  id: string
+  name: string
+  description?: string
+  price: number
+  image?: string
+  categories: string[]
+  isAvailable: boolean
 }
 
-export function OrderForm({ mealId, mealName, mealPrice, restaurantId, restaurantName, onSuccess }: OrderFormProps) {
+type Restaurant = {
+  id: string
+  name: string
+  address: string
+  phone?: string
+  images: string[]
+}
+
+type OrderItem = {
+  meal: Meal
+  quantity: number
+  specialInstructions?: string
+}
+
+interface OrderFormProps {
+  meal: Meal
+  restaurant: Restaurant
+  onClose: () => void
+  onSuccess: () => void
+}
+
+export function OrderForm({ meal, restaurant, onClose, onSuccess }: OrderFormProps) {
   const { user } = useAuth()
   const { location } = useLocation()
   const { toast } = useToast()
 
-  const [quantity, setQuantity] = useState(1)
-  const [phone, setPhone] = useState("")
-  const [notes, setNotes] = useState("")
+  const [orderItems, setOrderItems] = useState<OrderItem[]>([{ meal, quantity: 1 }])
+  const [deliveryAddress, setDeliveryAddress] = useState(location.address || "")
+  const [contactPhone, setContactPhone] = useState(user?.phone || "")
+  const [specialInstructions, setSpecialInstructions] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const total = mealPrice * quantity
+  const updateQuantity = (index: number, newQuantity: number) => {
+    if (newQuantity < 1) return
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    setOrderItems((prev) => prev.map((item, i) => (i === index ? { ...item, quantity: newQuantity } : item)))
+  }
 
-    if (!user) {
+  const updateInstructions = (index: number, instructions: string) => {
+    setOrderItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, specialInstructions: instructions } : item)),
+    )
+  }
+
+  const calculateSubtotal = () => {
+    return orderItems.reduce((total, item) => total + item.meal.price * item.quantity, 0)
+  }
+
+  const deliveryFee = 500
+  const serviceFee = calculateSubtotal() * 0.05
+  const total = calculateSubtotal() + deliveryFee + serviceFee
+
+  const handleSubmitOrder = async () => {
+    if (!deliveryAddress.trim()) {
       toast({
-        title: "Please sign in",
-        description: "You need to be signed in to place an order",
+        title: "Missing delivery address",
+        description: "Please provide a delivery address",
         variant: "destructive",
       })
       return
     }
 
-    if (!location.coordinates) {
+    if (!contactPhone.trim()) {
       toast({
-        title: "Location required",
-        description: "Please enable location services to place an order",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (!phone) {
-      toast({
-        title: "Phone number required",
-        description: "Please provide a phone number for delivery",
+        title: "Missing contact phone",
+        description: "Please provide a contact phone number",
         variant: "destructive",
       })
       return
@@ -66,47 +98,52 @@ export function OrderForm({ mealId, mealName, mealPrice, restaurantId, restauran
     try {
       setLoading(true)
 
-      // Create order in Supabase
-      const { data, error } = await supabaseClient
-        .from("orders")
-        .insert({
-          user_id: user.id,
-          restaurant_id: restaurantId,
-          status: "pending",
-          total: total,
-          delivery_location: {
-            latitude: location.coordinates.latitude,
-            longitude: location.coordinates.longitude,
-            address: location.address,
-          },
-          contact_phone: phone,
-          items: [
-            {
-              meal_id: mealId,
-              name: mealName,
-              price: mealPrice,
-              quantity: quantity,
-              notes: notes,
-            },
-          ],
-        })
-        .select()
+      const orderData = {
+        restaurantId: restaurant.id,
+        items: orderItems.map((item) => ({
+          mealId: item.meal.id,
+          quantity: item.quantity,
+          specialInstructions: item.specialInstructions,
+        })),
+        deliveryLocation: {
+          address: deliveryAddress,
+          coordinates:
+            location.latitude && location.longitude
+              ? {
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                }
+              : null,
+        },
+        contactPhone,
+        specialInstructions,
+      }
 
-      if (error) throw error
-
-      toast({
-        title: "Order placed successfully",
-        description: `Your order for ${quantity} ${mealName} has been placed`,
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(orderData),
       })
 
-      if (onSuccess) {
-        onSuccess()
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.message || "Failed to place order")
       }
-    } catch (error) {
+
+      const result = await response.json()
+      onSuccess()
+
+      toast({
+        title: "Order placed successfully!",
+        description: `Your order #${result.order.id.slice(0, 8)} has been submitted`,
+      })
+    } catch (error: any) {
       console.error("Error placing order:", error)
       toast({
         title: "Failed to place order",
-        description: "Please try again later",
+        description: error.message || "Please try again",
         variant: "destructive",
       })
     } finally {
@@ -115,93 +152,176 @@ export function OrderForm({ mealId, mealName, mealPrice, restaurantId, restauran
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="quantity">Quantity</Label>
-        <div className="flex items-center">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 rounded-r-none"
-            onClick={() => setQuantity(Math.max(1, quantity - 1))}
-            disabled={quantity <= 1}
-          >
-            -
-          </Button>
-          <Input
-            id="quantity"
-            type="number"
-            min="1"
-            value={quantity}
-            onChange={(e) => setQuantity(Number.parseInt(e.target.value) || 1)}
-            className="h-8 rounded-none text-center"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-8 w-8 rounded-l-none"
-            onClick={() => setQuantity(quantity + 1)}
-          >
-            +
-          </Button>
-        </div>
-      </div>
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            Place Order - {restaurant.name}
+          </DialogTitle>
+        </DialogHeader>
 
-      <div className="space-y-2">
-        <Label htmlFor="phone">Phone Number (for delivery)</Label>
-        <div className="flex">
-          <div className="flex items-center rounded-l-md border border-r-0 bg-muted px-3">
-            <Phone className="h-4 w-4 text-muted-foreground" />
+        <div className="space-y-6">
+          {/* Order Items */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Order Items</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {orderItems.map((item, index) => (
+                <div key={index} className="flex gap-4 p-4 border rounded-lg">
+                  <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                    <img
+                      src={item.meal.image || "/placeholder.svg?height=64&width=64"}
+                      alt={item.meal.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+
+                  <div className="flex-1 space-y-2">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-semibold">{item.meal.name}</h3>
+                        <p className="text-sm text-muted-foreground">₦{item.meal.price.toLocaleString()} each</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(index, item.quantity - 1)}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                        <Button
+                          size="icon"
+                          variant="outline"
+                          className="h-8 w-8"
+                          onClick={() => updateQuantity(index, item.quantity + 1)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1">
+                      {item.meal.categories.map((category) => (
+                        <Badge key={category} variant="secondary" className="text-xs">
+                          {category}
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <Input
+                      placeholder="Special instructions for this item..."
+                      value={item.specialInstructions || ""}
+                      onChange={(e) => updateInstructions(index, e.target.value)}
+                      className="text-sm"
+                    />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Delivery Information */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Delivery Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="delivery-address">Delivery Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Textarea
+                    id="delivery-address"
+                    placeholder="Enter your delivery address..."
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                    className="pl-10 resize-none"
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contact-phone">Contact Phone</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="contact-phone"
+                    type="tel"
+                    placeholder="Your phone number"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="special-instructions">Special Instructions (Optional)</Label>
+                <Textarea
+                  id="special-instructions"
+                  placeholder="Any special instructions for the restaurant..."
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  className="resize-none"
+                  rows={2}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Order Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Order Summary</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+                <span>₦{calculateSubtotal().toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Delivery Fee</span>
+                <span>₦{deliveryFee.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Service Fee (5%)</span>
+                <span>₦{serviceFee.toLocaleString()}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-semibold text-lg">
+                <span>Total</span>
+                <span>₦{total.toLocaleString()}</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitOrder} disabled={loading} className="flex-1">
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Placing Order...
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Place Order - ₦{total.toLocaleString()}
+                </>
+              )}
+            </Button>
           </div>
-          <Input
-            id="phone"
-            type="tel"
-            placeholder="Enter your phone number"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="rounded-l-none"
-            required
-          />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="notes">Special Instructions (optional)</Label>
-        <Input
-          id="notes"
-          placeholder="Any special requests for your order"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-      </div>
-
-      <div className="rounded-lg border p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Price per item</span>
-          <span>₦{mealPrice.toLocaleString()}</span>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Quantity</span>
-          <span>{quantity}</span>
-        </div>
-        <div className="mt-2 flex items-center justify-between border-t pt-2">
-          <span className="font-medium">Total</span>
-          <span className="font-bold">₦{total.toLocaleString()}</span>
-        </div>
-      </div>
-
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          "Place Order"
-        )}
-      </Button>
-    </form>
+      </DialogContent>
+    </Dialog>
   )
 }

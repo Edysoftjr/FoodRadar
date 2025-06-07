@@ -76,13 +76,14 @@ const dummyStatusPosts = [
       url: "/placeholder.svg?height=400&width=400",
       caption: "New menu alert! 🚨 Try our signature pepper soup with fresh fish. Available all week!",
     },
-    timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+    timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
     likes: 156,
     comments: 28,
     isLiked: false,
     location: "Victoria Island, Lagos",
   },
-  id: "5",
+  {
+    id: "5",
     user: {
       id: "user1",
       name: "Sarah Johnson",
@@ -95,7 +96,7 @@ const dummyStatusPosts = [
       url: "/placeholder.svg?height=400&width=400",
       caption: "Amazing jollof rice at Mama's Kitchen! 🍚✨ #foodie #jollofrice",
     },
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     likes: 24,
     comments: 5,
     isLiked: false,
@@ -115,7 +116,7 @@ const dummyStatusPosts = [
       url: "/placeholder.svg?height=400&width=400",
       caption: "Best shawarma in town! 🌯 The sauce is just perfect. Highly recommend!",
     },
-    timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
+    timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
     likes: 31,
     comments: 7,
     isLiked: true,

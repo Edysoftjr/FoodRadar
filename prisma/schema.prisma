@@ -1,157 +1,257 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This is your full, updated Prisma schema.
+// It includes the new models: Follow, StatusPost, and Promotion.
+// It also adds the required relation fields to the User and Restaurant models.
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
+// --- CORE MODELS ---
+
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
-  email         String    @unique
+  email         String         @unique
   emailVerified DateTime?
   image         String?
   password      String?
-  role          UserRole  @default(USER)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // User preferences
+  role          UserRole       @default(USER)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   budget        Int?
-  preferences   String[]  @default([])
-  location      Json?     // { latitude: number, longitude: number, address: string }
+  preferences   String[]       @default([])
+  location      Json?
   phone         String?
-
-  // Relations
-  restaurants   Restaurant[]
-  orders        Order[]
-  reviews       Review[]
+  accounts      accounts[]
   favorites     Favorite[]
   mealFavorites MealFavorite[]
-  accounts      Account[]
-  sessions      Session[]
+  orders        Order[]
+  restaurants   Restaurant[]
+  reviews       Review[]
+  sessions      sessions[]
+
+  // --- ADDED FOR NEW FEATURES ---
+  statusPosts StatusPost[]
+  following   Follow[]     @relation("Following")
+  followers   Follow[]     @relation("Followers")
 
   @@map("users")
 }
 
-model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-enum UserRole {
-  USER
-  VENDOR
-  ADMIN
-}
-
 model Restaurant {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  address     String?
-  coordinates Json     // { latitude: number, longitude: number }
-  images      String[] @default([])
-  categories  String[] @default([])
-  priceRange  Json     // { min: number, max: number, average: number }
-  rating      Float    @default(0)
-  reviewCount Int      @default(0)
-  openingHours Json?   // { monday: { open: string, close: string }, ... }
-  phone       String?
-  website     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  address      String?
+  coordinates  Json
+  images       String[]   @default([])
+  categories   String[]   @default([])
+  priceRange   Json
+  rating       Float      @default(0)
+  reviewCount  Int        @default(0)
+  openingHours Json?
+  phone        String?
+  website      String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  ownerId      String
+  favorites    Favorite[]
+  meals        Meal[]
+  orders       Order[]
+  owner        User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  reviews      Review[]
 
-  // Relations
-  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId     String
-  meals       Meal[]
-  orders      Order[]
-  reviews     Review[]
-  favorites   Favorite[]
+  // --- ADDED FOR NEW FEATURES ---
+  promotions Promotion[]
 
   @@map("restaurants")
 }
 
 model Meal {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  price       Int
-  image       String?
-  categories  String[] @default([])
-  isAvailable Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  id           String         @id @default(cuid())
+  name         String
+  description  String?
+  price        Int
+  image        String?
+  categories   String[]       @default([])
+  isAvailable  Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
   restaurantId String
-  orderItems   OrderItem[]
   favorites    MealFavorite[]
+  restaurant   Restaurant     @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
 
   @@map("meals")
 }
 
 model Order {
-  id                String      @id @default(cuid())
-  status            OrderStatus @default(PENDING)
-  total             Int
-  deliveryLocation  Json        // { latitude: number, longitude: number, address: string }
-  contactPhone      String
+  id                  String      @id @default(cuid())
+  status              OrderStatus @default(PENDING)
+  total               Int
+  deliveryLocation    Json
+  contactPhone        String
   specialInstructions String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-
-  // Relations
-  user          User        @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId        String
-  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
-  restaurantId  String
-  items         OrderItem[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  userId              String
+  restaurantId        String
+  items               OrderItem[]
+  restaurant          Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: SetNull)
+  user                User        @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("orders")
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  quantity  Int
+  price     Int
+  notes     String?
+  createdAt DateTime @default(now())
+  orderId   String
+  mealId    String
+  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: SetNull)
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+model Favorite {
+  id           String     @id @default(cuid())
+  createdAt    DateTime   @default(now())
+  userId       String
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, restaurantId])
+  @@map("favorites")
+}
+
+model MealFavorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  mealId    String
+  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mealId])
+  @@map("meal_favorites")
+}
+
+model Review {
+  id           String     @id @default(cuid())
+  rating       Int
+  comment      String?
+  images       String[]   @default([])
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  userId       String
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user         User       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("reviews")
+}
+
+// --- NEW MODELS TO SUPPORT FRONTEND FEATURES ---
+
+// Model for handling user-to-user following
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Following", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Followers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followingId])
+  @@map("follows")
+}
+
+// Model for user status updates (temporary posts)
+model StatusPost {
+  id        String   @id @default(cuid())
+  image     String
+  caption   String
+  createdAt DateTime @default(now())
+  expiresAt DateTime // Used to determine when the status is no longer visible
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("status_posts")
+}
+
+// Model for restaurant promotions and offers
+model Promotion {
+  id                 String     @id @default(cuid())
+  name               String
+  description        String
+  discountPercentage Int
+  startDate          DateTime
+  endDate            DateTime
+  isActive           Boolean    @default(true)
+  code               String?    @unique
+  appliesTo          String // e.g., 'all_meals', 'specific_meals', 'total_order'
+  minOrderValue      Int?
+  imageUrl           String?
+  createdAt          DateTime   @default(now())
+  restaurantId       String
+  restaurant         Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@map("promotions")
+}
+
+// --- AUTHENTICATION MODELS (NEXT-AUTH) ---
+
+model accounts {
+  id                String  @id
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  users             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model sessions {
+  id           String   @id
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  users        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model verification_tokens {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// --- ENUMS ---
+
+enum UserRole {
+  USER
+  VENDOR
+  ADMIN
 }
 
 enum OrderStatus {
@@ -161,65 +261,4 @@ enum OrderStatus {
   READY
   DELIVERED
   CANCELLED
-}
-
-model OrderItem {
-  id        String   @id @default(cuid())
-  quantity  Int
-  price     Int
-  notes     String?
-  createdAt DateTime @default(now())
-
-  // Relations
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId   String
-  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: SetNull)
-  mealId    String
-
-  @@map("order_items")
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  images    String[] @default([])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Relations
-  user         User       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  userId       String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-
-  @@map("reviews")
-}
-
-model Favorite {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
-  // Relations
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
-  restaurantId String
-
-  @@unique([userId, restaurantId])
-  @@map("favorites")
-}
-
-model MealFavorite {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-
-  // Relations
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  meal      Meal     @relation(fields: [mealId], references: [id], onDelete: Cascade)
-  mealId    String
-
-  @@unique([userId, mealId])
-  @@map("meal_favorites")
 }

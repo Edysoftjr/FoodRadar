@@ -1,24 +1,73 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "../../../auth/[...nextauth]/route"
+import { prisma } from "@/lib/prisma"
 
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const postId = params.id
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 200))
+    const { id: postId } = params
 
-    // In a real app, you would:
-    // 1. Get the current user from session
-    // 2. Check if user has already liked the post
-    // 3. Toggle the like status in the database
-    // 4. Return the updated like count
-
-    return NextResponse.json({
-      success: true,
-      message: "Like status updated",
+    // Check if post exists
+    const post = await prisma.post.findUnique({
+      where: { id: postId },
+      include: { user: true },
     })
+
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 })
+    }
+
+    // Check if already liked
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        userId_postId: {
+          userId: session.user.id,
+          postId,
+        },
+      },
+    })
+
+    if (existingLike) {
+      // Unlike
+      await prisma.like.delete({
+        where: { id: existingLike.id },
+      })
+      return NextResponse.json({ message: "Post unliked", isLiked: false })
+    } else {
+      // Like
+      await prisma.like.create({
+        data: {
+          userId: session.user.id,
+          postId,
+        },
+      })
+
+      // Create notification if not liking own post
+      if (post.userId !== session.user.id) {
+        await prisma.notification.create({
+          data: {
+            type: "LIKE",
+            title: "Post Liked",
+            message: `${session.user.name} liked your post`,
+            userId: post.userId,
+            senderId: session.user.id,
+            data: {
+              postId,
+              postContent: post.content.substring(0, 50),
+            },
+          },
+        })
+      }
+
+      return NextResponse.json({ message: "Post liked", isLiked: true })
+    }
   } catch (error) {
-    console.error("Error updating like status:", error)
-    return NextResponse.json({ error: "Failed to update like status" }, { status: 500 })
+    console.error("Error toggling like:", error)
+    return NextResponse.json({ error: "Failed to toggle like" }, { status: 500 })
   }
 }
